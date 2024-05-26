@@ -12,36 +12,41 @@ import time, random, threading
 font, grey, light_grey = '#FFFFFF', '#424549', '#676a6d'
 
 # Global Variable Setup
-times = {}
+start_time = None
 
 # Fetch Text From Tkinter Element
 def getContains(element):
     return str(element.cget('text'))
 
-# Subroutines
-def countdown(display, times):
-    for i in reversed(range(5)):
-        if getContains(display) == 'Game Failed':
-            return
-        display.config(text=f'Starting In: {i+1}')
-        time.sleep(1)
-    if not getContains(display) == 'Game Failed':
-        display.config(text='Get Ready...')
-        time.sleep(random.randint(200, 500)/100)
-    if not getContains(display) == 'Game Failed':
-        times['start_time'] = time.time()
-        button.config(text='Press', bg='green', fg=font)
-        display.config(text='Press')
+# Amend Start Time Value
+def updateTime(value):
+    global start_time
+    start_time = value
 
-def buttonPress(display, times):
+# Initialise Button & Record Time
+def readyButton():
+    updateTime(time.time()) 
+    button.config(text='Press', bg='green', fg=font)
+    display.config(text='Press')
+
+# Start Game Countdown
+def startGame():
+    updateTime(None)
+    for i in range(5, 0, -1):
+        display.config(text=f'Starting In: {i}')
+        time.sleep(1)
+        if getContains(display) == 'Game Failed': return False
+    display.config(text='Get Ready...')
+    time.sleep(random.uniform(2.0, 5.0))
+    readyButton()
+
+# Button Handling
+def buttonPress():
     if getContains(button) == 'Play Again':
-        times.clear()
-        display.config(text='')
         button.config(text='Wait...', bg=light_grey, fg=font)
-        threading.Thread(target=countdown, args=(display, times)).start()
-    elif 'start_time' in times:
-        times['end_time'] = time.time()
-        elapsed_time = times['end_time'] - times['start_time']
+        if len(threading.enumerate()) == 1: threading.Thread(target=startGame).start()
+    elif start_time is not None:
+        elapsed_time = time.time() - start_time
         display.config(text=f'Pressed In {elapsed_time:.2f}s')
         button.config(text='Play Again', bg='green', fg=font)
     else:
@@ -61,9 +66,9 @@ ct.windll.dwmapi.DwmSetWindowAttribute(ct.windll.user32.GetParent(window.winfo_i
 # User Interface Element Setup
 display = Label(window,font=('terminal',23),bg=grey,fg=font)
 display.pack(pady=15)
-button = Button(window,text='Wait...',font=('Helvatical bold',20),command=lambda:buttonPress(display, times),width=14,height=7,bg=light_grey,fg=font,bd=0)
+button = Button(window,text='Wait...',font=('Helvatical bold',20),command=buttonPress,width=14,height=7,bg=light_grey,fg=font,bd=0)
 button.pack(expand=True)
 
 # Starting Processes
-threading.Thread(target=countdown, args=(display, times)).start()
+threading.Thread(target=startGame).start()
 window.mainloop()
