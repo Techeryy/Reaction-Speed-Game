@@ -1,6 +1,12 @@
 # Reaction Speed Game
+A simple reaction speed game programmed in python using the tkinter graphics library.
 
 <img src = "images/preview.png" alt = "User Interface Preview Image" width = 318px height = 300px />
+
+## Functionality
+- Compact Intuitive Interface [Dark Mode]
+- Reaction Times Displayed In Milliseconds
+- High Score Support
 
 ## Requirements
 - **Python 3.0**<br>↳ Python Packages: time, random, threading, ctypes & tkinter

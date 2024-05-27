@@ -13,6 +13,7 @@ font, grey, light_grey = '#FFFFFF', '#424549', '#676a6d'
 
 # Global Variable Setup
 start_time = None
+high_score = 9999
 
 # Fetch Text From Tkinter Element
 def getContains(element):
@@ -42,12 +43,18 @@ def startGame():
 
 # Button Handling
 def buttonPress():
+    global high_score
     if getContains(button) == 'Play Again':
-        button.config(text='Wait...', bg=light_grey, fg=font)
-        if len(threading.enumerate()) == 1: threading.Thread(target=startGame).start()
+        if threading.active_count() == 1:
+            button.config(text='Wait...', bg=light_grey, fg=font)
+            high_score_display.config(text='')
+            threading.Thread(target=startGame).start()
     elif start_time is not None:
-        elapsed_time = time.time() - start_time
-        display.config(text=f'Pressed In {elapsed_time:.2f}s')
+        elapsed_time = round((time.time() - start_time) * 1000)
+        if high_score > elapsed_time:
+            high_score_display.config(text='New High Score!')
+            high_score = elapsed_time
+        display.config(text=f'Pressed In {elapsed_time}ms')
         button.config(text='Play Again', bg='green', fg=font)
     else:
         display.config(text='Game Failed')
@@ -55,7 +62,7 @@ def buttonPress():
 
 # Tkinter Window Configuration
 window = Tk()
-window.geometry('400x400')
+window.geometry('425x425')
 window.title('Reaction Speed Game')
 window.resizable(False,False)
 window.configure(bg=grey)
@@ -68,6 +75,8 @@ display = Label(window,font=('terminal',23),bg=grey,fg=font)
 display.pack(pady=15)
 button = Button(window,text='Wait...',font=('Helvatical bold',20),command=buttonPress,width=14,height=7,bg=light_grey,fg=font,bd=0)
 button.pack(expand=True)
+high_score_display = Label(window,font=('terminal',23),bg=grey,fg=font)
+high_score_display.pack(pady=15)
 
 # Starting Processes
 threading.Thread(target=startGame).start()
