@@ -8,76 +8,70 @@ import ctypes as ct
 from tkinter import *
 import time, random, threading
 
-# Colour Definitions
-font, grey, light_grey = '#FFFFFF', '#424549', '#676a6d'
-
 # Global Variable Setup
-start_time = None
+font_colour, grey, light_grey = '#FFFFFF', '#424549', '#676a6d'
 high_score = 9999
 
-# Fetch Text From Tkinter Element
+# Tkinter Element Helpers
 def getContains(element):
     return str(element.cget('text'))
 
-# Amend Start Time Value
-def updateTime(value):
-    global start_time
-    start_time = value
+def updateDisplay(text, bg_color=grey):
+	display.config(text=text, bg=bg_color)
 
-# Initialise Button & Record Time
-def readyButton():
-    updateTime(time.time()) 
-    button.config(text='Press', bg='green', fg=font)
-    display.config(text='Press')
+def updateSubDisplay(text, bg_color=grey):
+	sub_display.config(text=text, bg=bg_color)
 
-# Start Game Countdown
+def updateButton(text, bg_color=light_grey, command=None):
+	button.config(text=text, bg=bg_color, command=command)
+
+# Core Functions
 def startGame():
-    updateTime(None)
-    for i in range(5, 0, -1):
-        display.config(text=f'Starting In: {i}')
-        time.sleep(1)
-        if getContains(display) == 'Game Failed': return False
-    display.config(text='Get Ready...')
-    time.sleep(random.uniform(2.0, 5.0))
-    readyButton()
+	global start_time
+	start_time = None
+	updateSubDisplay(''), updateButton(text='Wait...', command=gameFailed)
+	for i in range(5, 0, -1):
+		updateDisplay(f'Starting In: {i}')
+		time.sleep(1)
+		if getContains(display) == 'Game Failed': return False
+	updateDisplay('Get Ready...')
+	time.sleep(random.uniform(2.0, 5.0))
+	start_time = time.time()
+	updateDisplay('Press'), updateButton('Press', 'green', gameSuccess)
 
-# Button Handling
-def buttonPress():
-    global high_score
-    if getContains(button) == 'Play Again':
-        if threading.active_count() == 1:
-            button.config(text='Wait...', bg=light_grey, fg=font)
-            high_score_display.config(text='')
-            threading.Thread(target=startGame).start()
-    elif start_time is not None:
-        elapsed_time = round((time.time() - start_time) * 1000)
-        if high_score > elapsed_time:
-            high_score_display.config(text='New High Score!')
-            high_score = elapsed_time
-        display.config(text=f'Pressed In {elapsed_time}ms')
-        button.config(text='Play Again', bg='green', fg=font)
-    else:
-        display.config(text='Game Failed')
-        button.config(text='Play Again', bg='red', fg=font)
+def startGameThread():
+	if threading.active_count() == 1:
+		threading.Thread(target=startGame).start()
 
-# Tkinter Window Configuration
+def gameSuccess():
+	global high_score
+	elapsed_time = round((time.time() - start_time) * 1000)
+	if high_score > elapsed_time:
+		high_score = elapsed_time
+		updateSubDisplay('New High Score!')
+	updateDisplay(f'Pressed In {elapsed_time}ms'), updateButton('Play Again', 'green', startGameThread)
+
+def gameFailed():
+	updateDisplay('Game Failed'), updateButton('Play Again', 'red', startGameThread)
+
+# Tkinter Setup
 window = Tk()
 window.geometry('425x425')
 window.title('Reaction Speed Game')
-window.resizable(False,False)
+window.resizable(False, False)
 window.configure(bg=grey)
 window.iconphoto(True,PhotoImage(file='assets/favicon.png'))
 window.update()
 ct.windll.dwmapi.DwmSetWindowAttribute(ct.windll.user32.GetParent(window.winfo_id()), 35, ct.byref(ct.c_int(0x00221F1E)),ct.sizeof(ct.c_int))
 
-# User Interface Element Setup
-display = Label(window,font=('terminal',23),bg=grey,fg=font)
+# UI Elements
+display = Label(window, font=('terminal', 23), fg=font_colour, bg=grey)
 display.pack(pady=15)
-button = Button(window,text='Wait...',font=('Helvatical bold',20),command=buttonPress,width=14,height=7,bg=light_grey,fg=font,bd=0)
+button = Button(window, font=('Helvatical bold', 20), fg=font_colour, bg=light_grey, width=14, height=7, bd=0)
 button.pack(expand=True)
-high_score_display = Label(window,font=('terminal',23),bg=grey,fg=font)
-high_score_display.pack(pady=15)
+sub_display = Label(window, font=('terminal', 23), fg=font_colour, bg=grey)
+sub_display.pack(pady=15)
 
 # Starting Processes
-threading.Thread(target=startGame).start()
+startGameThread()
 window.mainloop()
