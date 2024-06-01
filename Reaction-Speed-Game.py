@@ -1,15 +1,16 @@
 # A simple reaction speed game programmed in python
 # using the tkinter graphics library.
-# Requirements: time, random, threading, ctypes, tkinter
+# Requirements: time, json, random, threading, ctypes, tkinter, datetime
 # Programmed By: Stephen Adams
 
 # Imports
 import ctypes as ct
 from tkinter import *
-import time, random, threading
+from datetime import datetime
+import time, json, random, threading
 
 # Global Variable Setup
-font_colour, grey, light_grey = '#FFFFFF', '#424549', '#676a6d'
+font_colour, grey, light_grey, dark_grey = '#FFFFFF', '#424549', '#676a6d', '#3B3D3E'
 high_score = 9999
 
 # Tkinter Element Helpers
@@ -17,44 +18,69 @@ def getContains(element):
     return str(element.cget('text'))
 
 def updateDisplay(text, bg_color=grey):
-	display.config(text=text, bg=bg_color)
+    display.config(text=text, bg=bg_color)
 
 def updateSubDisplay(text, bg_color=grey):
-	sub_display.config(text=text, bg=bg_color)
+    sub_display.config(text=text, bg=bg_color)
 
 def updateButton(text, bg_color=light_grey, command=None):
-	button.config(text=text, bg=bg_color, command=command)
+    button.config(text=text, bg=bg_color, command=command)
+
+# Score Storage
+def storeTime(time):
+    scores_list = getTimes()
+    scores_list.append({'date_time': datetime.now().strftime('%d/%m/%Y %H:%M:%S'), 'time': time})
+    with open('scores.json', 'w') as file:
+        json.dump(scores_list, file, indent=4)
+
+def getTimes():
+    try:
+        with open('scores.json', 'r') as file:
+            return json.load(file)
+    except FileNotFoundError: return []
+
+# Historic Scores Widget
+def createWidget():
+    history_canvas = Canvas(window, bg=dark_grey, highlightthickness=0)
+    history_canvas.place(relx=0.5, rely=0.5, anchor='center')
+    navbar = Frame(history_canvas, bg=dark_grey)
+    navbar.pack(side='top', fill='x')
+    Label(navbar, text="Historic Scores", fg=font_colour, bg=dark_grey).pack(side='left')
+    Button(navbar, text="X", command=lambda: history_canvas.destroy(), fg=font_colour, bg=dark_grey, bd=0).pack(side='right')
+    for entry in getTimes():
+        Label(history_canvas, text=f"{entry['date_time']}, Time: {entry['time']} ms", fg=font_colour, bg=dark_grey).pack()
 
 # Core Functions
 def startGame():
-	global start_time
-	start_time = None
-	updateSubDisplay(''), updateButton(text='Wait...', command=gameFailed)
-	for i in range(5, 0, -1):
-		updateDisplay(f'Starting In: {i}')
-		time.sleep(1)
-		if getContains(display) == 'Game Failed': return False
-	updateDisplay('Get Ready...')
-	time.sleep(random.uniform(2.0, 5.0))
-	start_time = time.time()
-	updateDisplay('Press'), updateButton('Press', 'green', gameSuccess)
+    global start_time
+    start_time = None
+    updateSubDisplay(''), updateButton(text='Wait...', command=gameFailed)
+    for i in range(5, 0, -1):
+        updateDisplay(f'Starting In: {i}')
+        time.sleep(1)
+        if getContains(display) == 'Game Failed': return False
+    updateDisplay('Get Ready...')
+    time.sleep(random.uniform(2.0, 5.0))
+    start_time = time.time()
+    updateDisplay('Press'), updateButton('Press', 'green', gameSuccess)
 
 def startGameThread():
-	if threading.active_count() == 1:
-		threading.Thread(target=startGame).start()
+    if threading.active_count() == 1:
+        threading.Thread(target=startGame).start()
 
 def gameSuccess():
-	global high_score
-	elapsed_time = round((time.time() - start_time) * 1000)
-	if high_score > elapsed_time:
-		high_score = elapsed_time
-		updateSubDisplay('New High Score!')
-	updateDisplay(f'Pressed In {elapsed_time}ms'), updateButton('Play Again', 'green', startGameThread)
+    global high_score
+    elapsed_time = round((time.time() - start_time) * 1000)
+    storeTime(elapsed_time)
+    if high_score > elapsed_time:
+        high_score = elapsed_time
+        updateSubDisplay('New High Score!')
+    updateDisplay(f'Pressed In {elapsed_time}ms'), updateButton('Play Again', 'green', startGameThread)
 
 def gameFailed():
-	updateDisplay('Game Failed'), updateButton('Play Again', 'red', startGameThread)
+    updateDisplay('Game Failed'), updateButton('Play Again', 'red', startGameThread)
 
-# Tkinter Setup
+# Tkinter Window Configuration
 window = Tk()
 window.geometry('425x425')
 window.title('Reaction Speed Game')
@@ -64,13 +90,14 @@ window.iconphoto(True,PhotoImage(file='assets/favicon.png'))
 window.update()
 ct.windll.dwmapi.DwmSetWindowAttribute(ct.windll.user32.GetParent(window.winfo_id()), 35, ct.byref(ct.c_int(0x00221F1E)),ct.sizeof(ct.c_int))
 
-# UI Elements
+# User Interface Element Setup
 display = Label(window, font=('terminal', 23), fg=font_colour, bg=grey)
-display.pack(pady=15)
+display.pack(pady=10)
+sub_display = Label(window,font=('terminal', 18), fg=font_colour, bg=grey)
+sub_display.pack()
 button = Button(window, font=('Helvatical bold', 20), fg=font_colour, bg=light_grey, width=14, height=7, bd=0)
-button.pack(expand=True)
-sub_display = Label(window, font=('terminal', 23), fg=font_colour, bg=grey)
-sub_display.pack(pady=15)
+button.pack(pady=5)
+Button(window, text='★ Scores', command=createWidget, font=('Helvatical bold', 20), fg=font_colour, bg=light_grey, bd=0).pack(pady=10)
 
 # Starting Processes
 startGameThread()

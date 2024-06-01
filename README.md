@@ -7,9 +7,10 @@ A simple reaction speed game programmed in python using the tkinter graphics lib
 - Compact Intuitive Interface [Dark Mode]
 - Reaction Times Displayed In Milliseconds
 - High Score Support
+- Persistent Score Storage
 
 ## Requirements
-- **Python 3.0**<br>↳ Python Packages: time, random, threading, ctypes & tkinter
+- **Python 3.0**<br>↳ Python Packages: time, json, random, threading, ctypes, tkinter & datetime
 - **Windows 11** - Required For Dark Title Bar [Optional]
 
 ## Credits
