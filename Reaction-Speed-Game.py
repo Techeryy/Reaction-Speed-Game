@@ -11,7 +11,6 @@ import time, json, random, threading
 
 # Global Variable Setup
 font_colour, grey, light_grey, dark_grey = '#FFFFFF', '#424549', '#676a6d', '#3B3D3E'
-high_score = 9999
 
 # Tkinter Element Helpers
 def getContains(element):
@@ -38,6 +37,11 @@ def getTimes():
         with open('scores.json', 'r') as file:
             return json.load(file)
     except FileNotFoundError: return []
+
+def getHighScore(lowest=9999):
+    for item in getTimes():
+        if item['time'] < lowest: lowest = item['time']
+    return lowest
 
 # Historic Scores Widget
 def createWidget():
@@ -69,12 +73,10 @@ def startGameThread():
         threading.Thread(target=startGame).start()
 
 def gameSuccess():
-    global high_score
     elapsed_time = round((time.time() - start_time) * 1000)
-    storeTime(elapsed_time)
-    if high_score > elapsed_time:
-        high_score = elapsed_time
+    if getHighScore() > elapsed_time:
         updateSubDisplay('New High Score!')
+    storeTime(elapsed_time)
     updateDisplay(f'Pressed In {elapsed_time}ms'), updateButton('Play Again', 'green', startGameThread)
 
 def gameFailed():
@@ -82,7 +84,7 @@ def gameFailed():
 
 # Tkinter Window Configuration
 window = Tk()
-window.geometry('425x425')
+window.geometry('425x410')
 window.title('Reaction Speed Game')
 window.resizable(False, False)
 window.configure(bg=grey)
@@ -92,12 +94,12 @@ ct.windll.dwmapi.DwmSetWindowAttribute(ct.windll.user32.GetParent(window.winfo_i
 
 # User Interface Element Setup
 display = Label(window, font=('terminal', 23), fg=font_colour, bg=grey)
-display.pack(pady=10)
-sub_display = Label(window,font=('terminal', 18), fg=font_colour, bg=grey)
-sub_display.pack()
+display.pack(pady=(15,0))
+sub_display = Label(window,font=('Helvatical bold', 16), fg=font_colour, bg=grey)
+sub_display.pack(pady=4)
 button = Button(window, font=('Helvatical bold', 20), fg=font_colour, bg=light_grey, width=14, height=7, bd=0)
 button.pack(pady=5)
-Button(window, text='★ Scores', command=createWidget, font=('Helvatical bold', 20), fg=font_colour, bg=light_grey, bd=0).pack(pady=10)
+Button(window, text='★ Scores', command=createWidget, font=('Helvatical bold', 15), fg=font_colour, bg=grey, bd=0).pack(pady=10)
 
 # Starting Processes
 startGameThread()
