@@ -51,6 +51,8 @@ def createWidget():
     navbar.pack(side='top', fill='x')
     Label(navbar, text="Historic Scores", fg=font_colour, bg=dark_grey).pack(side='left')
     Button(navbar, text="X", command=lambda: history_canvas.destroy(), fg=font_colour, bg=dark_grey, bd=0).pack(side='right')
+    if getTimes() == []:
+        Label(history_canvas, text='No Data Available', fg=font_colour, bg=dark_grey).pack()
     for entry in getTimes():
         Label(history_canvas, text=f"{entry['date_time']}, Time: {entry['time']} ms", fg=font_colour, bg=dark_grey).pack()
 
